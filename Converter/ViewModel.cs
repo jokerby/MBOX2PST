@@ -20,7 +20,6 @@ namespace Converter
     {
         private readonly RDOSession _session = new RDOSession();
         private string _destinationPath;
-
         private string _sourcePath;
         private Thread _thread;
         private DateTime _start;
@@ -36,11 +35,12 @@ namespace Converter
             get { return _isRun; }
             set
             {
-                if (value == _isRun)
-                    return;
-                _isRun = value;
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(IsStopped));
+                if (value != _isRun)
+                {
+                    _isRun = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(IsStopped));
+                }
             }
         }
 
@@ -49,10 +49,11 @@ namespace Converter
             get { return _currentFile; }
             set
             {
-                if (value == _currentFile)
-                    return;
-                _currentFile = value;
-                OnPropertyChanged();
+                if (value != _currentFile)
+                {
+                    _currentFile = value;
+                    OnPropertyChanged();
+                }
             }
         }
 
@@ -61,10 +62,11 @@ namespace Converter
             get { return _sourcePath; }
             set
             {
-                if (value == _sourcePath)
-                    return;
-                _sourcePath = value;
-                OnPropertyChanged();
+                if (value != _sourcePath)
+                {
+                    _sourcePath = value;
+                    OnPropertyChanged();
+                }
             }
         }
 
@@ -73,10 +75,11 @@ namespace Converter
             get { return _destinationPath; }
             set
             {
-                if (value == _destinationPath)
-                    return;
-                _destinationPath = value;
-                OnPropertyChanged();
+                if (value != _destinationPath)
+                {
+                    _destinationPath = value;
+                    OnPropertyChanged();
+                }
             }
         }
 
@@ -86,9 +89,9 @@ namespace Converter
             AutoDestinationPath();
         }
 
-        public void SelectSourcePath() => SourcePath = SelectPath("Wybierz folder z profilem Thunderbird", SourcePath);
+        public void SelectSourcePath() => SourcePath = SelectPath("Select source folder (to Thunderbird's profile)", SourcePath);
 
-        public void SelectDestinationPath() => DestinationPath = SelectPath("Wybierz folder docelowy", DestinationPath);
+        public void SelectDestinationPath() => DestinationPath = SelectPath("Select destination folder", DestinationPath);
 
         public void Run()
         {
@@ -120,7 +123,7 @@ namespace Converter
             _tasks.Clear();
             if (!string.IsNullOrWhiteSpace(message))
             {
-                MessageBox.Show(message, "Konwersja", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(message, "Conversion", MessageBoxButton.OK, MessageBoxImage.Information);
                 MessageBox.Show((DateTime.Now - _start).ToString());
             }
             IsRun = false;
@@ -147,7 +150,7 @@ namespace Converter
 
         private void AutoDestinationPath()
         {
-            var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Pliki programu Outlook");
+            var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Outlook");
             if (!Directory.Exists(path))
                 Directory.CreateDirectory(path);
             DestinationPath = path;
@@ -171,7 +174,7 @@ namespace Converter
         {
             if (Process.GetProcessesByName("OUTLOOK").Any())
             {
-                MessageBox.Show("Outlook jest uruchomiony. Proszę zamknąć program i ponownie uruchomić konwersję.", "Błąd krytyczny", MessageBoxButton.OK, MessageBoxImage.Stop);
+                MessageBox.Show("Outlook is running. Please close program and rerun conversion.", "Critical error", MessageBoxButton.OK, MessageBoxImage.Stop);
                 _message = null;
                 return;
             }
@@ -189,7 +192,7 @@ namespace Converter
             var pstPath = Path.Combine(DestinationPath, name + ".pst");
             if (File.Exists(pstPath))
             {
-                if (MessageBox.Show($"Plik {path} już istnieje. Nadpisać?\nUWAGA! Spowoduje to utratę wszystkich poprzednich danych!", "Nadpisać?", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.No)
+                if (MessageBox.Show($"File {pstPath} already exist. Rewrite?\nAttention! You're lost all of your previous data!", "Rewrite?", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.No)
                     return;
                 File.Delete(pstPath);
             }
