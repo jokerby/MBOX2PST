@@ -1,16 +1,25 @@
-﻿using System.Windows;
+﻿using System;
+using System.Windows;
 using System.Windows.Input;
 
 namespace Converter
 {
     public partial class MainWindow : Window
     {
-        private readonly ViewModel _vm = new ViewModel();
+        private readonly ViewModel _vm;
 
         public MainWindow()
         {
-            InitializeComponent();
-            DataContext = _vm;
+            try
+            {
+                _vm = new ViewModel();
+                InitializeComponent();
+                DataContext = _vm;
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.ToString());
+            }
         }
 
         private void TextBox_PreviewMouseDown(object sender, MouseButtonEventArgs e)

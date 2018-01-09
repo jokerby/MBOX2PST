@@ -120,12 +120,11 @@ namespace Converter
 
         private void ThreadCallback(string message = null)
         {
+            var finish = DateTime.Now;
             _tasks.Clear();
             if (!string.IsNullOrWhiteSpace(message))
-            {
                 MessageBox.Show(message, "Conversion", MessageBoxButton.OK, MessageBoxImage.Information);
-                MessageBox.Show((DateTime.Now - _start).ToString());
-            }
+            MessageBox.Show((finish - _start).ToString());
             IsRun = false;
             CurrentFile = string.Empty;
         }
@@ -150,7 +149,7 @@ namespace Converter
 
         private void AutoDestinationPath()
         {
-            var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Outlook");
+            var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Pliki programu Outlook");
             if (!Directory.Exists(path))
                 Directory.CreateDirectory(path);
             DestinationPath = path;
@@ -190,39 +189,30 @@ namespace Converter
         {
             var name = Path.GetFileName(path);
             var pstPath = Path.Combine(DestinationPath, name + ".pst");
-            if (File.Exists(pstPath))
-            {
-                if (MessageBox.Show($"File {pstPath} already exist. Rewrite?\nAttention! You're lost all of your previous data!", "Rewrite?", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.No)
-                    return;
+            if (File.Exists(pstPath) && MessageBox.Show($"File {pstPath} already exist. Rewrite?\nAttention! You're lost all of your previous data!", "Rewrite?", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.No)
                 File.Delete(pstPath);
-            }
             _session.LogonPstStore(pstPath, 2, name);
-            var root = _session.Stores.DefaultStore.IPMRootFolder;
-            ConvertFolder(path, root);
+            ConvertFolder(path, _session.Stores.DefaultStore.IPMRootFolder);
             _session.Logoff();
         }
 
         private void ConvertFolder(string path, IRDOFolder rootFolder, bool isRoot = true)
         {
-            //var factory = new TaskFactory(new LimitedConcurrencyLevelTaskScheduler(4));
             foreach (var file in Directory.GetFiles(path))
-                if (!Path.HasExtension(file))
+                if (Path.GetExtension(file) != "msf")
                     ReadFolder(file, GetFolderByNameOrCreate(rootFolder, Path.GetFileNameWithoutExtension(file), isRoot));
-            //_tasks.Add(factory.StartNew(() => ReadFolder(file, GetFolderByNameOrCreate(rootFolder, Path.GetFileNameWithoutExtension(file), isRoot))));
             foreach (var directory in Directory.GetDirectories(path))
             {
                 var dirName = Path.GetFileName(directory);
                 if (dirName?.Tail(4).ToLower() == ".sbd")
                     ConvertFolder(directory, GetFolderByNameOrCreate(rootFolder, dirName.Substring(0, dirName.Length - 4)), false);
             }
-            //Task.WaitAll(_tasks.ToArray());
         }
 
         private IRDOFolder GetFolderByNameOrCreate(IRDOFolder rootFolder, string name, bool isRoot = true)
         {
             if (!isRoot)
                 return FindOrCreate(rootFolder, name, 0, false);
-
             switch (name.ToLower())
             {
                 case "inbox":
@@ -249,12 +239,9 @@ namespace Converter
             RDOFolder2 folder;
             try
             {
-                if (isDefKindSet)
-                    folder = _session.GetDefaultFolder((rdoDefaultFolders)defKind) as RDOFolder2;
-                else
-                    folder = root.Folders[name] as RDOFolder2;
+                folder = (isDefKindSet ? _session.GetDefaultFolder((rdoDefaultFolders)defKind) : root.Folders[name]) as RDOFolder2;
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 folder = root.Folders.Add(name) as RDOFolder2;
                 if (isDefKindSet)
